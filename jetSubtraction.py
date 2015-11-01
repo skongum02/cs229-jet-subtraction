@@ -1,6 +1,8 @@
 __author__ = 'veinkong'
 
 import numpy
+import matplotlib.pyplot as plt
+
 
 def calculateSNR(data, x):
     offsetDiff = numpy.square(data[0:1000,x] - data[0:1000,4])
