@@ -10,21 +10,42 @@ data = read.csv("data2.csv", header=TRUE, na.strings = "NA")[1:1000, 1:9]
 data$noise = data$area * data$rho
 data$offset = data$tjpt - data$jpt
 
-train_rows <- sample(nrow(data), round(nrow(data) * 0.8))
+trainerror <- 0
+testerror<-0
+areatrainerr <- 0
+areatesterr <-0
+#for(i in 1 :8 ){
+  
+train_rows <- sample(nrow(data), round(nrow(data) *0.8 ))
 traindf <- data[train_rows, ]
 testdf <- data[-train_rows, ]
 
 
 # linear model
-OLS_model <- lm(tjpt ~ jptnoarea + rho * area + sigma + sumtrkPV + sumtrkPU, data = traindf)
+OLS_model <- lm(tjpt ~ jptnoarea + sumtrkPU, data = traindf)
+coef(OLS_model)
 response_column <- which(colnames(traindf) == "tjpt")
-mean(summary(OLS_model)$residuals^2)
-mean((traindf$jpt - traindf$tjpt)^2)
+#trainerror[i] <-
+  mean(summary(OLS_model)$residuals^2)
+#areatrainerr[i] <- 
+  mean((traindf$tjpt - traindf$jpt)^2)
 predictions_ols <- predict(OLS_model, testdf[, -response_column])
-mean((predictions_ols - testdf$tjpt)^2)
-mean((testdf$jpt - testdf$tjpt)^2)
+#testerror[i] <- 
+  mean((predictions_ols - testdf$tjpt)^2)
+#areatesterr[i] <- 
+mean((testdf$tjpt - testdf$jpt)^2)
+
+#}
+
+plot(1:8, trainerror,  ylim=c(0, 80), col = 'red', 'l')
+lines(1:8, testerror, col="yellow", lwd=2,'l')
+lines(1:8, areatrainerr, col="blue", lwd=2,'l')
+lines(1:8, areatesterr, col="black", lwd=2,'l')
+
+legend(1000,100, c("train_lin, test_lin, train_area, test_area"), lty=c(1,1,1,1),lwd=c(2,2,2,2), col=c("red","yellow","blue","black"))  
 
 x <- predictions_ols - testdf$tjpt
+#x <- predictions_ols
 h<-hist(x, breaks=20, col="red", xlab="h(x) - y on the test set", 
         main="Linear regression") 
 xfit<-seq(min(x),max(x),length=40) 
@@ -33,6 +54,7 @@ yfit <- yfit*diff(h$mids[1:2])*length(x)
 lines(xfit, yfit, col="black", lwd=2)
 
 x2 <- testdf$jpt - testdf$tjpt
+#x2 <- testdf$offset
 #h<-hist(x2, breaks=20, col="blue", xlab="h(x) - y on the test set", 
         #main="Linear regression") 
 xfit2<-seq(min(x2),max(x2),length=40) 
@@ -42,7 +64,7 @@ lines(xfit2, yfit2, col="green", lwd=2)
 
 #gbm model
 
-gbm_formula <- as.formula(offset ~ jptnoarea + rho + noise + area + sigma + sumtrkPV + sumtrkPU)
+gbm_formula <- as.formula(offset ~ jptnoarea + rho  + area + sigma + sumtrkPV + sumtrkPU)
 gbm_model <- gbm(gbm_formula, data=traindf, n.trees = 50, bag.fraction = 0.75, cv.folds = 10, interaction.depth = 2)
 gbm_perf <- gbm.perf(gbm_model, method = "cv")
 summary(gbm_model)
